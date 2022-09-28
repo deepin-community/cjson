@@ -1,0 +1,4 @@
+usr/include/cjson/cJSON.h
+usr/lib/*/libcjson.so
+usr/lib/*/cmake/
+usr/lib/*/pkgconfig/
