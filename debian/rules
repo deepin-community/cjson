@@ -5,3 +5,9 @@ export DEB_LDFLAGS_MAINT_APPEND =
 
 %:
 	dh $@ --buildsystem=cmake
+
+override_dh_auto_configure:
+	dh_auto_configure -- \
+	        -DENABLE_CJSON_UTILS=On \
+	        $(NULL)
+

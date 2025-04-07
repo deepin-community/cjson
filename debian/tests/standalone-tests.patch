@@ -1,0 +1,42 @@
+--- a/tests/CMakeLists.txt
++++ b/tests/CMakeLists.txt
+@@ -1,3 +1,22 @@
++set(CMAKE_LEGACY_CYGWIN_WIN32 0)
++cmake_minimum_required(VERSION 3.0)
++
++project(cJSON
++    VERSION 1.7.18
++    LANGUAGES C)
++
++cmake_policy(SET CMP0054 NEW)  # set CMP0054 policy
++option(ENABLE_CJSON_TEST "Enable building cJSON test" ON)
++
++enable_testing()
++
++set(TEST_CJSON cJSON_test)
++set(CJSON_LIB cjson)
++add_executable("${TEST_CJSON}" ../test.c)
++target_link_libraries("${TEST_CJSON}" "${CJSON_LIB}")
++
++add_test(NAME ${TEST_CJSON} COMMAND "${CMAKE_CURRENT_BINARY_DIR}/${TEST_CJSON}")
++
+ if(ENABLE_CJSON_TEST)
+     add_library(unity STATIC unity/src/unity.c)
+ 
+@@ -87,8 +106,6 @@
+         endif()
+     endforeach()
+ 
+-    add_dependencies(check ${unity_tests})
+-
+     if (ENABLE_CJSON_UTILS)
+         #copy test files
+         file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/json-patch-tests")
+@@ -114,7 +131,5 @@
+                     COMMAND "./${cjson_utils_test}")
+             endif()
+         endforeach()
+-
+-        add_dependencies(check ${cjson_utils_tests})
+     endif()
+ endif()
