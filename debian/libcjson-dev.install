@@ -1,4 +1,6 @@
 usr/include/cjson/cJSON.h
-usr/lib/*/libcjson.so
+usr/include/cjson/cJSON_Utils.h
 usr/lib/*/cmake/
+usr/lib/*/libcjson.so
+usr/lib/*/libcjson_utils.so
 usr/lib/*/pkgconfig/

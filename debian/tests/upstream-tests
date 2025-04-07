@@ -1,0 +1,22 @@
+#!/bin/sh
+
+# run upstream's test suite
+
+set -e
+
+# copy source tree to temp dir
+cp -r . "$AUTOPKGTEST_TMP" ; cd "$AUTOPKGTEST_TMP"
+
+# patch upstream's tests/CMakeLists.txt to run standalone
+patch -p1 <debian/tests/standalone-tests.patch
+
+# set compiler
+export CC="gcc"
+
+# build
+mkdir build ; cd build
+cmake ../tests/ 2>&1
+cmake --build . -j $(nproc) 2>&1
+
+# run
+ctest --output-on-failure -j $(nproc) 2>&1
