@@ -1,0 +1,187 @@
+From 6d373bf9259f76f3fc30375a0d2544a919dc49f0 Mon Sep 17 00:00:00 2001
+From: PeterAlfredLee <peteralfredlee@gmail.com>
+Date: Mon, 21 Apr 2025 15:18:10 +0800
+Subject: allocate memory for the temporary buffer
+
+Allocate memory for the temporary buffer when paring numbers.
+This fixes CVE-2023-26819
+---
+ cJSON.c              | 37 ++++++++++++++++++++++++++++++++-----
+ tests/misc_tests.c   | 17 +++++++++++++++++
+ tests/parse_number.c | 20 ++++++++++++++++++++
+ 3 files changed, 69 insertions(+), 5 deletions(-)
+
+diff --git a/cJSON.c b/cJSON.c
+index 61483d9..c7a605b 100644
+--- a/cJSON.c
++++ b/cJSON.c
+@@ -308,9 +308,11 @@ static cJSON_bool parse_number(cJSON * const item, parse_buffer * const input_bu
+ {
+     double number = 0;
+     unsigned char *after_end = NULL;
+-    unsigned char number_c_string[64];
++    unsigned char *number_c_string;
+     unsigned char decimal_point = get_decimal_point();
+     size_t i = 0;
++    size_t number_string_length = 0;
++    cJSON_bool has_decimal_point = false;
+ 
+     if ((input_buffer == NULL) || (input_buffer->content == NULL))
+     {
+@@ -320,7 +322,7 @@ static cJSON_bool parse_number(cJSON * const item, parse_buffer * const input_bu
+     /* copy the number into a temporary buffer and replace '.' with the decimal point
+      * of the current locale (for strtod)
+      * This also takes care of '\0' not necessarily being available for marking the end of the input */
+-    for (i = 0; (i < (sizeof(number_c_string) - 1)) && can_access_at_index(input_buffer, i); i++)
++    for (i = 0; can_access_at_index(input_buffer, i); i++)
+     {
+         switch (buffer_at_offset(input_buffer)[i])
+         {
+@@ -338,11 +340,12 @@ static cJSON_bool parse_number(cJSON * const item, parse_buffer * const input_bu
+             case '-':
+             case 'e':
+             case 'E':
+-                number_c_string[i] = buffer_at_offset(input_buffer)[i];
++                number_string_length++;
+                 break;
+ 
+             case '.':
+-                number_c_string[i] = decimal_point;
++                number_string_length++;
++                has_decimal_point = true;
+                 break;
+ 
+             default:
+@@ -350,11 +353,33 @@ static cJSON_bool parse_number(cJSON * const item, parse_buffer * const input_bu
+         }
+     }
+ loop_end:
+-    number_c_string[i] = '\0';
++    /* malloc for temporary buffer, add 1 for '\0' */
++    number_c_string = (unsigned char *) input_buffer->hooks.allocate(number_string_length + 1);
++    if (number_c_string == NULL)
++    {
++        return false; /* allocation failure */
++    }
++
++    memcpy(number_c_string, buffer_at_offset(input_buffer), number_string_length);
++    number_c_string[number_string_length] = '\0';
++
++    if (has_decimal_point)
++    {
++        for (i = 0; i < number_string_length; i++)
++        {
++            if (number_c_string[i] == '.')
++            {
++                /* replace '.' with the decimal point of the current locale (for strtod) */
++                number_c_string[i] = decimal_point;
++            }
++        }
++    }
+ 
+     number = strtod((const char*)number_c_string, (char**)&after_end);
+     if (number_c_string == after_end)
+     {
++        /* free the temporary buffer */
++        input_buffer->hooks.deallocate(number_c_string);
+         return false; /* parse_error */
+     }
+ 
+@@ -377,6 +402,8 @@ loop_end:
+     item->type = cJSON_Number;
+ 
+     input_buffer->offset += (size_t)(after_end - number_c_string);
++    /* free the temporary buffer */
++    input_buffer->hooks.deallocate(number_c_string);
+     return true;
+ }
+ 
+diff --git a/tests/misc_tests.c b/tests/misc_tests.c
+index 94dd91a..0b7ac1d 100644
+--- a/tests/misc_tests.c
++++ b/tests/misc_tests.c
+@@ -749,6 +749,22 @@ static void deallocated_pointers_should_be_set_to_null(void)
+ #endif
+ }
+ 
++static void cjson_parse_big_numbers_should_not_report_error(void)
++{
++    cJSON *valid_big_number_json_object1 = cJSON_Parse("{\"a\": true, \"b\": [ null,9999999999999999999999999999999999999999999999912345678901234567]}");
++    cJSON *valid_big_number_json_object2 = cJSON_Parse("{\"a\": true, \"b\": [ null,999999999999999999999999999999999999999999999991234567890.1234567E3]}");
++    const char *invalid_big_number_json1 = "{\"a\": true, \"b\": [ null,99999999999999999999999999999999999999999999999.1234567890.1234567]}";
++    const char *invalid_big_number_json2 = "{\"a\": true, \"b\": [ null,99999999999999999999999999999999999999999999999E1234567890e1234567]}";
++
++    TEST_ASSERT_NOT_NULL(valid_big_number_json_object1);
++    TEST_ASSERT_NOT_NULL(valid_big_number_json_object2);
++    TEST_ASSERT_NULL_MESSAGE(cJSON_Parse(invalid_big_number_json1), "Invalid big number JSONs should not be parsed.");
++    TEST_ASSERT_NULL_MESSAGE(cJSON_Parse(invalid_big_number_json2), "Invalid big number JSONs should not be parsed.");
++
++    cJSON_Delete(valid_big_number_json_object1);
++    cJSON_Delete(valid_big_number_json_object2);
++}
++
+ int CJSON_CDECL main(void)
+ {
+     UNITY_BEGIN();
+@@ -780,6 +796,7 @@ int CJSON_CDECL main(void)
+     RUN_TEST(cjson_set_valuestring_to_object_should_not_leak_memory);
+     RUN_TEST(cjson_set_bool_value_must_not_break_objects);
+     RUN_TEST(deallocated_pointers_should_be_set_to_null);
++    RUN_TEST(cjson_parse_big_numbers_should_not_report_error);
+ 
+     return UNITY_END();
+ }
+diff --git a/tests/parse_number.c b/tests/parse_number.c
+index 4cb72ec..defda4a 100644
+--- a/tests/parse_number.c
++++ b/tests/parse_number.c
+@@ -48,6 +48,7 @@ static void assert_parse_number(const char *string, int integer, double real)
+     parse_buffer buffer = { 0, 0, 0, 0, { 0, 0, 0 } };
+     buffer.content = (const unsigned char*)string;
+     buffer.length = strlen(string) + sizeof("");
++    buffer.hooks = global_hooks;
+ 
+     TEST_ASSERT_TRUE(parse_number(item, &buffer));
+     assert_is_number(item);
+@@ -55,6 +56,17 @@ static void assert_parse_number(const char *string, int integer, double real)
+     TEST_ASSERT_EQUAL_DOUBLE(real, item->valuedouble);
+ }
+ 
++static void assert_parse_big_number(const char *string)
++{
++    parse_buffer buffer = { 0, 0, 0, 0, { 0, 0, 0 } };
++    buffer.content = (const unsigned char*)string;
++    buffer.length = strlen(string) + sizeof("");
++    buffer.hooks = global_hooks;
++
++    TEST_ASSERT_TRUE(parse_number(item, &buffer));
++    assert_is_number(item);
++}
++
+ static void parse_number_should_parse_zero(void)
+ {
+     assert_parse_number("0", 0, 0);
+@@ -96,6 +108,13 @@ static void parse_number_should_parse_negative_reals(void)
+     assert_parse_number("-123e-128", 0, -123e-128);
+ }
+ 
++static void parse_number_should_parse_big_numbers(void)
++{
++    assert_parse_big_number("9999999999999999999999999999999999999999999999912345678901234567");
++    assert_parse_big_number("9999999999999999999999999999999999999999999999912345678901234567E10");
++    assert_parse_big_number("999999999999999999999999999999999999999999999991234567890.1234567");
++}
++
+ int CJSON_CDECL main(void)
+ {
+     /* initialize cJSON item */
+@@ -106,5 +125,6 @@ int CJSON_CDECL main(void)
+     RUN_TEST(parse_number_should_parse_positive_integers);
+     RUN_TEST(parse_number_should_parse_positive_reals);
+     RUN_TEST(parse_number_should_parse_negative_reals);
++    RUN_TEST(parse_number_should_parse_big_numbers);
+     return UNITY_END();
+ }
+-- 
+2.30.2
+
