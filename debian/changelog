@@ -1,3 +1,10 @@
+cjson (1.7.18-3.1) unstable; urgency=medium
+
+  * Non-maintainer upload.
+  * CVE-2023-26819: rejection of valid texts (Closes: #1103687)
+
+ -- Adrian Bunk <bunk@debian.org>  Fri, 13 Jun 2025 19:02:53 +0300
+
 cjson (1.7.18-3) unstable; urgency=medium
 
   * autopkgtest: Set CC=gcc so cmake can find the compiler
