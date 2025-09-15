@@ -1,3 +1,10 @@
+cjson (1.7.18-3.1deepin1) unstable; urgency=medium
+
+  * Apply patch from Moritz Mühlenhoff:
+    + CVE-2025-57052 (Closes: #1114757)
+
+ -- Tianyu Chen <sweetyfish@deepin.org>  Mon, 15 Sep 2025 17:18:55 +0800
+
 cjson (1.7.18-3.1) unstable; urgency=medium
 
   * Non-maintainer upload.
