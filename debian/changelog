@@ -1,9 +1,8 @@
-cjson (1.7.18-3.1deepin1) unstable; urgency=medium
+cjson (1.7.18-3.1+deb13u1) trixie-security; urgency=medium
 
-  * Apply patch from Moritz Mühlenhoff:
-    + CVE-2025-57052 (Closes: #1114757)
+  * CVE-2025-57052 (Closes: #1114757)
 
- -- Tianyu Chen <sweetyfish@deepin.org>  Mon, 15 Sep 2025 17:18:55 +0800
+ -- Moritz Mühlenhoff <jmm@debian.org>  Fri, 12 Sep 2025 00:24:25 +0200
 
 cjson (1.7.18-3.1) unstable; urgency=medium
 
