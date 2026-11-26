@@ -5,6 +5,10 @@ cjson (1.7.18-3.1deepin2) unstable; urgency=medium
     dropping bytes after escapes (CVE-2026-29036)   Upstream:
     https://github.com/DaveGamble/cJSON/commit/d77a5167167122f6fcc0ac2f6
     77bccb138294973
+  * fix(cve): CVE-2026-67217 (medium) - Apply JSON Patch arrays
+    atomically (CVE-2026-67217)   Upstream:
+    https://github.com/DaveGamble/cJSON/commit/be79a2e8861e0384c814de739
+    ec5ed0e8271c412
 
  -- tunaichao <tunaichao@uniontech.com>  Fri, 11 Sep 2026 10:05:31 +0800
 

@@ -1,3 +1,4 @@
 0001-allocate-memory-for-the-temporary-buffer.patch
 CVE-2025-57052.patch-
 CVE-2026-29036.patch
+CVE-2026-67217.patch
