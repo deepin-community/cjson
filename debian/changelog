@@ -1,3 +1,12 @@
+cjson (1.7.18-3.1deepin3) unstable; urgency=medium
+
+  * fix(cve): CVE-2026-67215 (high) - Cap JSON Patch graft depth at the
+    nesting limit (CVE-2026-67215)   Upstream:
+    https://github.com/DaveGamble/cJSON/commit/204c26ab8f4ce1e67ce4210b4
+    895ac8039d03b95
+
+ -- deepin-ci-robot <packages@deepin.org>  Fri, 27 Nov 2026 06:07:05 +0800
+
 cjson (1.7.18-3.1deepin2) unstable; urgency=medium
 
   * Rebuild with LTO enabled (dpkg vendor feature optimize/lto).
