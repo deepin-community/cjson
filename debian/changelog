@@ -4,6 +4,9 @@ cjson (1.7.18-3.1deepin3) unstable; urgency=medium
     nesting limit (CVE-2026-67215)   Upstream:
     https://github.com/DaveGamble/cJSON/commit/204c26ab8f4ce1e67ce4210b4
     895ac8039d03b95
+  * fix(cve): CVE-2026-67216 (high) - Bound cJSON_Compare cost: sort-
+    based objects, depth cap (CVE-2026-67216)   Upstream:
+    https://github.com/DaveGamble/cJSON/pull/1116.patch
 
  -- deepin-ci-robot <packages@deepin.org>  Fri, 27 Nov 2026 06:07:05 +0800
 
